@@ -2,8 +2,6 @@ import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
 import requests
-
-# BotFather से मिला हुआ API token यहाँ डालें
 import os
 
 TOKEN = os.getenv("BOT_TOKEN")
@@ -83,7 +81,11 @@ def main():
     # यह नया हैंडलर है जो सिर्फ़ वीडियो मैसेज को देखेगा
     application.add_handler(MessageHandler(filters.VIDEO & ~filters.COMMAND, handle_video))
     
+    # यह नई लाइन जोड़ें ताकि बॉट बिना किसी एरर के चल सके
+    application.add_handler(MessageHandler(filters.ALL, lambda u, c: None))
+
     application.run_polling()
 
 if __name__ == '__main__':
     main()
+    
