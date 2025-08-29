@@ -7,9 +7,11 @@ import os
 TOKEN = os.getenv("BOT_TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+ADMIN_ID = 1306579102  
 
-# Yahan apni Telegram User ID daalein. Aap ise @userinfobot se pata kar sakte hain.
-ADMIN_ID = 1306579102  # Ise apni real User ID se badal lein
+# Webhook के लिए जरूरी
+PORT = int(os.environ.get('PORT', '8443'))
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -17,9 +19,9 @@ logging.basicConfig(
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # आपका पिछला code यहाँ रहेगा...
     if context.args:
         file_code = context.args[0]
-        
         # Supabase API endpoint
         api_url = f"{SUPABASE_URL}/rest/v1/files_data"
         headers = {
@@ -29,7 +31,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "Prefer": "return=representation"
         }
         params = {
-            "select": "file_id,title",  # title ko yahan add kiya hai
+            "select": "file_id,title",
             "file_code": f"eq.{file_code}"
         }
         
@@ -40,16 +42,15 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             
             if data and len(data) > 0:
                 file_id = data[0]['file_id']
-                file_title = data[0].get('title', "Movieshub.org")  # title ko fetch karein, default value bhi de sakte hain
+                file_title = data[0].get('title', "Movieshub.org")
                 
-                # Naya caption text banaya
                 caption_text = f"**{file_title}**\n\nHere is your requested file! Thank you for visiting https://movieshub.in.net/"
                 
                 await context.bot.send_video(
                     chat_id=update.effective_chat.id,
                     video=file_id,
                     caption=caption_text,
-                    parse_mode='Markdown' # Markdown support ke liye
+                    parse_mode='Markdown'
                 )
             else:
                 await update.message.reply_text(f"Invalid code: {file_code}")
@@ -61,9 +62,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text('Hello! Welcome to the bot.')
 
-# यह नया फंक्शन है जो सिर्फ़ admin को file ID देगा
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # check karein ki message bhejne wala admin hai ya nahi
     if update.effective_user.id == ADMIN_ID:
         video_file_id = update.message.video.file_id
         await update.message.reply_text(f"Here is the video file ID: \n\n`{video_file_id}`")
@@ -74,18 +73,16 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     application = ApplicationBuilder().token(TOKEN).build()
     
-    # कमांड हैंडलर
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
-    
-    # यह नया हैंडलर है जो सिर्फ़ वीडियो मैसेज को देखेगा
     application.add_handler(MessageHandler(filters.VIDEO & ~filters.COMMAND, handle_video))
     
-    # यह नई लाइन जोड़ें ताकि बॉट बिना किसी एरर के चल सके
-    application.add_handler(MessageHandler(filters.ALL, lambda u, c: None))
-
-    application.run_polling()
+    # यह नई line polling की जगह webhook के लिए है
+    application.run_webhook(listen="0.0.0.0",
+                            port=PORT,
+                            url_path=TOKEN,
+                            webhook_url=WEBHOOK_URL + '/' + TOKEN)
 
 if __name__ == '__main__':
     main()
-    
+
