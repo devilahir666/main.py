@@ -61,15 +61,12 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     else:
         await update.message.reply_text(
-    """🎉 Welcome to MoviesHub Bot! 🎉
-
-Sabse pehle aapko apni movie yaha se search karni hogi 👇
-🌐 Website: https://movieshub.in.net/
-
-Waha jaake jab aap "Download" button pe click karoge,
-tab aapko yahi bot aapka movie download karne me help karega. ✅
-
-Enjoy! 🍿"""
+    "🎉 Welcome to MoviesHub Bot! 🎉\n\n"
+    "Sabse pehle aapko apni movie yaha se search karni hogi 👇\n"
+    "🌐 Website: https://movieshub.in.net/\n\n"
+    "Waha jaake jab aap \"Download\" button pe click karoge,\n"
+    "tab aapko yahi bot aapka movie download karne me help karega. ✅\n\n"
+    "Enjoy! 🍿"
         )
 
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
