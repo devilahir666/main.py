@@ -60,7 +60,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("An error occurred. Please try again later.")
 
     else:
-        await update.message.reply_text('🎉 Welcome to MoviesHub Bot! 🎉
+        await update.message.reply_text(
+    """🎉 Welcome to MoviesHub Bot! 🎉
 
 Sabse pehle aapko apni movie yaha se search karni hogi 👇
 🌐 Website: https://movieshub.in.net/
@@ -68,7 +69,8 @@ Sabse pehle aapko apni movie yaha se search karni hogi 👇
 Waha jaake jab aap "Download" button pe click karoge,
 tab aapko yahi bot aapka movie download karne me help karega. ✅
 
-Enjoy! 🍿')
+Enjoy! 🍿"""
+        )
 
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID:
