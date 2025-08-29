@@ -72,7 +72,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID:
         video_file_id = update.message.video.file_id
-        await update.message.reply_text(f"Here is the video file ID: \n\n`{video_file_id}`")
+        await update.message.reply_text(video_file_id)
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("I am a downloader bot. To get a file, use the /start command with a valid file code.")
