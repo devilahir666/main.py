@@ -4,11 +4,11 @@ from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, Messa
 import requests
 
 # BotFather से मिला हुआ API token यहाँ डालें
-TOKEN = "8130704556:AAFmgqRZJqgEiqf6mQ2fTDCchjt3xNmPP1c"
+import os
 
-# Supabase की जानकारी यहाँ डालें
-SUPABASE_URL = "https://eorilcomhitkpkthfdes.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVvcmlsY29taGl0a3BrdGhmZGVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM5NzU3NjAsImV4cCI6MjA2OTU1MTc2MH0.nqJhpTgEB2JBEp8z_d-Na6YVbeOf-hTlwP_VOBJ16pE"
+TOKEN = os.getenv("BOT_TOKEN")
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # Yahan apni Telegram User ID daalein. Aap ise @userinfobot se pata kar sakte hain.
 ADMIN_ID = 1306579102  # Ise apni real User ID se badal lein
