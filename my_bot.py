@@ -55,7 +55,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 file_id = data[0]['file_id']
                 file_title = data[0].get('title', "Movieshub.org")
                 
-                caption_text = f"*{file_title}*\n\n*Here is your requested file!*\n\n*Notice: This file will be deleted in 5 minutes. Forward it if you want to save it.*"
+                caption_text = (
+                    f"*{file_title}*\n\n"
+                    "*Here is your requested file!*\n\n"
+                    "*Notice: This file will be deleted in 5 minutes. Forward it if you want to save it.*"
+                )
                 
                 sent_message = await context.bot.send_video(
                     chat_id=update.effective_chat.id,
@@ -64,7 +68,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     parse_mode='Markdown'
                 )
                 
-                # 5 minute ke baad auto-delete
                 async def delete_later(message_id):
                     await asyncio.sleep(300)  # 5 minutes
                     try:
@@ -83,17 +86,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     else:
         await update.message.reply_text(
-    "🎉 Welcome to *Movieshub* Bot! 🎉\n\n"
-    "Sabse pehle aapko apni movie yaha se search karni hogi 👇\n"
-    "🌐 Website: https://movieshub.in.net/\n\n"
-    "Waha jaake jab aap \"Download\" button pe click karoge,\n"
-    "tab aapko yahi bot aapka movie download karne me help karega. ✅\n\n"
-    "Enjoy! 🍿",
-    parse_mode='Markdown'
+            "🎉 Welcome to *Movieshub* Bot! 🎉\n\n"
+            "Sabse pehle aapko apni movie yaha se search karni hogi 👇\n"
+            "🌐 Website: https://movieshub.in.net/\n\n"
+            "Waha jaake jab aap \"Download\" button pe click karoge,\n"
+            "tab aapko yahi bot aapka movie download karne me help karega. ✅\n\n"
+            "Enjoy! 🍿",
+            parse_mode='Markdown'
         )
 
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id == ADMIN_ID:
+    # Safe check for effective_user
+    if update.effective_user and update.effective_user.id == ADMIN_ID:
         try:
             video_file_id = update.message.video.file_id
             video_caption = update.message.caption if update.message.caption else "No Title"
@@ -116,8 +120,11 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 async with session.post(api_url, headers=headers, json=data_to_save) as response:
                     response.raise_for_status()
             
-            # Caption with notice
-            caption_text = f"*Movieshub*\n\n*Here is your requested file!*\n\n*Notice: This file will be deleted in 5 minutes. Forward it if you want to save it.*"
+            caption_text = (
+                "*Movieshub*\n\n"
+                "*Here is your requested file!*\n\n"
+                "*Notice: This file will be deleted in 5 minutes. Forward it if you want to save it.*"
+            )
             
             sent_message = await context.bot.send_video(
                 chat_id=update.effective_chat.id,
@@ -148,6 +155,8 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
         except Exception as e:
             logging.error(f"An unexpected error occurred: {e}")
             await update.message.reply_text("कोई अनपेक्षित गड़बड़ी हो गई।")
+    else:
+        logging.warning("Non-admin or invalid user tried to send a video. Skipping.")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("I am a downloader bot. To get a file, use the /start command with a valid file code.")
