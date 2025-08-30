@@ -1,7 +1,7 @@
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
-import aiohttp
+import aiohttp # requests की जगह aiohttp import करें
 import os
 
 TOKEN = os.getenv("BOT_TOKEN")
@@ -19,7 +19,6 @@ logging.basicConfig(
 )
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # आपका पिछला code यहाँ रहेगा...
     if context.args:
         file_code = context.args[0]
         # Supabase API endpoint
@@ -27,8 +26,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         headers = {
             "apikey": SUPABASE_KEY,
             "Authorization": f"Bearer {SUPABASE_KEY}",
-            "Content-Type": "application/json",
-            "Prefer": "return=representation"
+            "Content-Type": "application/json"
         }
         params = {
             "select": "file_id,title",
@@ -36,9 +34,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         
         try:
-            response = requests.get(api_url, headers=headers, params=params)
-            response.raise_for_status()
-            data = response.json()
+            # aiohttp का इस्तेमाल करें
+            async with aiohttp.ClientSession() as session:
+                async with session.get(api_url, headers=headers, params=params) as response:
+                    response.raise_for_status() # HTTP errors के लिए
+                    data = await response.json()
             
             if data and len(data) > 0:
                 file_id = data[0]['file_id']
@@ -55,7 +55,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await update.message.reply_text(f"Invalid code: {file_code}")
                 
-        except requests.exceptions.RequestException as e:
+        except aiohttp.ClientError as e:
             logging.error(f"Error fetching data from Supabase: {e}")
             await update.message.reply_text("An error occurred. Please try again later.")
 
@@ -68,6 +68,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     "tab aapko yahi bot aapka movie download karne me help karega. ✅\n\n"
     "Enjoy! 🍿"
         )
+
+# बाकी का code वही रहेगा...
 
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID:
@@ -92,4 +94,4 @@ def main():
 
 if __name__ == '__main__':
     main()
-
+    
