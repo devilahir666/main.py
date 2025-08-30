@@ -1,8 +1,11 @@
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
-import aiohttp # requests की जगह aiohttp import करें
+import aiohttp
+import requests # पिंग करने के लिए requests की ज़रूरत होगी
 import os
+import time
+import threading # पिंग को बैकग्राउंड में चलाने के लिए
 
 TOKEN = os.getenv("BOT_TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -18,10 +21,21 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+# यह फ़ंक्शन हर 2 मिनट में बॉट के Webhook URL को पिंग करेगा
+def pinger():
+    while True:
+        try:
+            logging.info("Pinging the bot to keep it alive...")
+            requests.get(WEBHOOK_URL + '/' + TOKEN)
+        except Exception as e:
+            logging.error(f"Error pinging the bot: {e}")
+        
+        # 2 मिनट (120 सेकंड) के लिए रुकें
+        time.sleep(120)
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if context.args:
         file_code = context.args[0]
-        # Supabase API endpoint
         api_url = f"{SUPABASE_URL}/rest/v1/files_data"
         headers = {
             "apikey": SUPABASE_KEY,
@@ -34,10 +48,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
         
         try:
-            # aiohttp का इस्तेमाल करें
             async with aiohttp.ClientSession() as session:
                 async with session.get(api_url, headers=headers, params=params) as response:
-                    response.raise_for_status() # HTTP errors के लिए
+                    response.raise_for_status()
                     data = await response.json()
             
             if data and len(data) > 0:
@@ -69,8 +82,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     "Enjoy! 🍿"
         )
 
-# बाकी का code वही रहेगा...
-
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID:
         video_file_id = update.message.video.file_id
@@ -80,13 +91,16 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("I am a downloader bot. To get a file, use the /start command with a valid file code.")
 
 def main():
+    # पिंगर थ्रेड शुरू करें
+    pinger_thread = threading.Thread(target=pinger, daemon=True)
+    pinger_thread.start()
+
     application = ApplicationBuilder().token(TOKEN).build()
     
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(MessageHandler(filters.VIDEO & ~filters.COMMAND, handle_video))
     
-    # यह नई line polling की जगह webhook के लिए है
     application.run_webhook(listen="0.0.0.0",
                             port=PORT,
                             url_path=TOKEN,
