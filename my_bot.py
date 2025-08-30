@@ -7,6 +7,7 @@ import os
 import time
 import threading
 import uuid
+import asyncio
 
 TOKEN = os.getenv("BOT_TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -54,15 +55,25 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 file_id = data[0]['file_id']
                 file_title = data[0].get('title', "Movieshub.org")
                 
-                # ✅ Bold caption for the video
-                caption_text = f"*{file_title}*\n\n*Here is your requested file! Thank you for visiting https://movieshub.in.net/*"
+                caption_text = f"*{file_title}*\n\n*Here is your requested file!*\n\n*Notice: This file will be deleted in 5 minutes. Forward it if you want to save it.*"
                 
-                await context.bot.send_video(
+                sent_message = await context.bot.send_video(
                     chat_id=update.effective_chat.id,
                     video=file_id,
                     caption=caption_text,
                     parse_mode='Markdown'
                 )
+                
+                # 5 minute ke baad auto-delete
+                async def delete_later(message_id):
+                    await asyncio.sleep(300)  # 5 minutes
+                    try:
+                        await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=message_id)
+                    except:
+                        pass
+
+                asyncio.create_task(delete_later(sent_message.message_id))
+                
             else:
                 await update.message.reply_text(f"Invalid code: {file_code}")
                 
@@ -105,15 +116,25 @@ async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 async with session.post(api_url, headers=headers, json=data_to_save) as response:
                     response.raise_for_status()
             
-            # ✅ Forward video with bold caption
-            caption_text = f"*Movieshub*\n\n*Here is your requested file! Thank you for visiting https://movieshub.in.net/*"
+            # Caption with notice
+            caption_text = f"*Movieshub*\n\n*Here is your requested file!*\n\n*Notice: This file will be deleted in 5 minutes. Forward it if you want to save it.*"
             
-            await context.bot.send_video(
+            sent_message = await context.bot.send_video(
                 chat_id=update.effective_chat.id,
                 video=video_file_id,
                 caption=caption_text,
                 parse_mode='Markdown'
             )
+            
+            # Auto-delete after 5 minutes
+            async def delete_later(message_id):
+                await asyncio.sleep(300)
+                try:
+                    await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=message_id)
+                except:
+                    pass
+
+            asyncio.create_task(delete_later(sent_message.message_id))
             
             # Send file ID, download code, and link
             await update.message.reply_text(f"*फाइल ID:*\n`{video_file_id}`", parse_mode='Markdown')
