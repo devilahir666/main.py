@@ -1,7 +1,7 @@
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, CommandHandler, MessageHandler, filters
-import requests
+import aiohttp
 import os
 
 TOKEN = os.getenv("BOT_TOKEN")
