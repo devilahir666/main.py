@@ -6,6 +6,7 @@ import requests # पिंग करने के लिए requests की ज
 import os
 import time
 import threading # पिंग को बैकग्राउंड में चलाने के लिए
+import uuid
 
 TOKEN = os.getenv("BOT_TOKEN")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -84,8 +85,52 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id == ADMIN_ID:
-        video_file_id = update.message.video.file_id
-        await update.message.reply_text(video_file_id)
+        try:
+            video_file_id = update.message.video.file_id
+            
+            # 1. वीडियो का कैप्शन (टाइटल) लें
+            # अगर वीडियो में कैप्शन है तो उसे इस्तेमाल करें, वरना 'No Title' रखें।
+            video_caption = update.message.caption if update.message.caption else "No Title"
+
+            # 2. एक यूनिक कोड (UUID) जेनरेट करें
+            file_code = str(uuid.uuid4())
+            
+            # 3. Supabase में डेटा सेव करें (अब टाइटल भी साथ में)
+            api_url = f"{SUPABASE_URL}/rest/v1/files_data"
+            headers = {
+                "apikey": SUPABASE_KEY,
+                "Authorization": f"Bearer {SUPABASE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=minimal"
+            }
+            data_to_save = {
+                "file_id": video_file_id,
+                "file_code": file_code,
+                "title": video_caption  # यहां टाइटल जोड़ा गया है
+            }
+            
+            async with aiohttp.ClientSession() as session:
+                async with session.post(api_url, headers=headers, json=data_to_save) as response:
+                    response.raise_for_status()
+            
+            # 4. तीन अलग-अलग मैसेज भेजें
+            # पहला मैसेज: फाइल ID
+            await update.message.reply_text(f"**फाइल ID:**\n`{video_file_id}`", parse_mode='Markdown')
+            
+            # दूसरा मैसेज: डाउनलोड कोड
+            await update.message.reply_text(f"**डाउनलोड कोड:**\n`{file_code}`", parse_mode='Markdown')
+
+            # तीसरा मैसेज: डाउनलोड लिंक
+            download_link = f"https://t.me/Movieshubfilesdlbot?start={file_code}"
+            await update.message.reply_text(f"**डाउनलोड लिंक:**\n`{download_link}`", parse_mode='Markdown')
+            
+        except aiohttp.ClientError as e:
+            logging.error(f"Error saving data to Supabase: {e}")
+            await update.message.reply_text("Supabase में डेटा सेव करते समय कोई गड़बड़ी हो गई। कृपया फिर से कोशिश करें।")
+        except Exception as e:
+            logging.error(f"An unexpected error occurred: {e}")
+            await update.message.reply_text("कोई अनपेक्षित गड़बड़ी हो गई।")
+            
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("I am a downloader bot. To get a file, use the /start command with a valid file code.")
